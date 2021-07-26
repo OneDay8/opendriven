@@ -12,7 +12,7 @@ def evaluation(pd_buy,pd_sell,data):
     
     # Sharpe Ratio：收益均值/标准差
     # ???????
-    Sharpe_ratio = (data.return_after * data.flag-0.03/365).mean() / (data.return_after * data.flag).std() * np.sqrt(N) #np.sqrt函数计算每个元素的开方
+    Sharpe_ratio = (data.return_after * data.flag).mean() / (data.return_after * data.flag).std() * np.sqrt(N) #np.sqrt函数计算每个元素的开方
     
     # win rate，(trans.price_sell - trans.price_buy) > 0为真返回1，假返回0
     r_buy = len(pd_buy.price_buy)/(len(pd_buy.price_buy)+len(pd_sell.price_sell))
