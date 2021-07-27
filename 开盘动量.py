@@ -81,7 +81,7 @@ for begin in [15,30,45,60,75,90,105]:
 
 
 
-
+#开盘动量基础策略
 def opendriven(begin,interval,df_list,df_data):
     data = df_list.copy()
     df_data['flag'] = 0 # 持仓标记，持多仓：1，不持仓：0，持空仓：-1
@@ -95,55 +95,51 @@ def opendriven(begin,interval,df_list,df_data):
     return_open = []
     return_close = []
     for day in range(len(data)):
-        return_begin_1 = (data[day]['close'].iloc[begin-1]-data[day]['open'].iloc[0])/data[day]['open'].iloc[0]
-        return_after_1 = (data[day]['close'].iloc[-1] - data[day]['open'].iloc[begin]) / (data[day]['open'].iloc[begin])
+        return_begin_1 = (data[day]['close'].iloc[begin-1]*(1-0.00013)-data[day]['open'].iloc[0]*1.00013)/data[day]['open'].iloc[0]*1.00013
+        #加上双边交易费1.3%%
+        return_after_1 = (data[day]['close'].iloc[-1]*(1-0.00013) - data[day]['open'].iloc[begin]*1.00013) / data[day]['open'].iloc[begin]*1.00013
         #无交易费用
-        return_after_cost_1 = 0
+        #return_after_cost_1 = 0
         #双边交易费用：万2
-        #return_after_cost_1 = (data[day]['close'].iloc[len(data[day]['close'])-1]*0.0002 + data[day]['open'].iloc[begin]*0.0002) / (data[day]['open'].iloc[begin])
+        #return_after—_cost_1 = (data[day]['close'].iloc[len(data[day]['close'])-1]*(1-0.00013) - data[day]['open'].iloc[begin]*1.00013) / (data[day]['open'].iloc[begin]*1.00013)
         return_begin.append(return_begin_1)
         return_after.append(return_after_1)
-        return_after_cost.append(return_after_cost_1)
+        #return_after_cost.append(return_after_cost_1)
         return_date.append(data[day]['date'].iloc[0])
         return_open.append(data[day]['open'].iloc[0])
         return_close.append(data[day]['close'].iloc[-1])
-    
+     
         
         
         #开多仓
-        if min(data[day]['low'][0:interval]) <= min(data[day]['low'][interval:interval*2]) and min(data[day]['low'][interval:interval*2]) <= min(data[day]['low'][interval*2:interval*3]) \
-            and data[day]['close'].iloc[interval-1] <= data[day]['close'].iloc[interval*2-1] and data[day]['close'].iloc[interval*2-1] <= data[day]['close'].iloc[interval*3-1] \
-                and data[day]['open'].iloc[0] <= data[day]['open'].iloc[interval] and data[day]['open'].iloc[interval] <= data[day]['open'].iloc[interval*2]:
-            
-            
-            
+        if min(data[day]['low'][0:interval]) <= min(data[day]['low'][interval:interval*2]) <= min(data[day]['low'][interval*2:interval*3]) \
+            and data[day]['close'].iloc[interval-1] <= data[day]['close'].iloc[interval*2-1] <= data[day]['close'].iloc[interval*3-1] \
+                and data[day]['open'].iloc[0] <= data[day]['open'].iloc[interval] <= data[day]['open'].iloc[interval*2]:
+
             df_data.loc[day,'flag'] = 1
             date_in = data[day]['date'].iloc[0]  #记录买入日期
-            '''
+            
             # 出错
-            price = data[day]['close'][interval*3:interval*3+5]
-            weights = data[day]['vol'][interval*3:interval*3+5]
-            vwap = np.average(price,weights = weights) 
-            price_in = vwap   #记录买入价格
+            #记录买入价格
+            price_in = np.average(data[day]['close'][interval*3:interval*3+5],weights = data[day]['vol'][interval*3:interval*3+5]) 
+           
             '''
             price_in = data[day]['open'].iloc[interval*3]
-            price_close_buy = data[day]['close'].iloc[len(data[day]['close'])-1]  #记录平仓价格
+            '''
+            price_close_buy = data[day]['close'].iloc[len(data[day]['close'])-1]*(1-0.00013)  #记录平仓价格
             record_buy.append([date_in, price_in,price_close_buy])  #将日期和价格以列表形式添加到买入记录
             
         #开空仓
-        elif data[day]['close'].iloc[interval-1] >= data[day]['close'].iloc[interval*2-1] and data[day]['close'].iloc[interval*2-1] >= data[day]['close'].iloc[interval*3-1] \
-            and max(data[day]['high'][0:interval]) >= max(data[day]['high'][interval:interval*2]) and max(data[day]['high'][interval:interval*2]) >= max(data[day]['high'][interval*2:interval*3]) \
-                and data[day]['open'].iloc[0] >= data[day]['open'].iloc[interval] and data[day]['open'].iloc[interval] >= data[day]['open'].iloc[interval*2]:
+        elif data[day]['close'].iloc[interval-1] >= data[day]['close'].iloc[interval*2-1] >= data[day]['close'].iloc[interval*3-1] \
+            and max(data[day]['high'][0:interval]) >= max(data[day]['high'][interval:interval*2]) >= max(data[day]['high'][interval*2:interval*3]) \
+                and data[day]['open'].iloc[0] >= data[day]['open'].iloc[interval] >= data[day]['open'].iloc[interval*2]:
             
-            
-            
+        
             df_data.loc[day,'flag'] = -1
             date_out = data[day]['date'].iloc[0]  #记录卖出日期
-            price = data[day]['close'][interval*3:interval*3+5]
-            weights = data[day]['vol'][interval*3:interval*3+5]
-            vwap = np.average(price,weights = weights)
-            price_out = vwap   #记录卖出价格
-            price_close_sell = data[day]['close'].iloc[len(data[day]['close'])-1]  #记录平仓价格
+            price_out = np.average(data[day]['close'][interval*3:interval*3+5],weights = data[day]['vol'][interval*3:interval*3+5])
+            #记录卖出价格
+            price_close_sell = data[day]['close'].iloc[len(data[day]['close'])-1]*(1-0.00013)  #记录平仓价格
             record_sell.append([date_out, price_out,price_close_sell])  #将日期和价格以列表形式添加到买入记录
         
         else:
@@ -166,7 +162,7 @@ def opendriven(begin,interval,df_list,df_data):
 
 
     #data['simple_return'] = data.close.pct_change(1).fillna(0)
-    df_data['nav'] = (1+df_data.return_after.fillna(0)*df_data.flag-df_data.return_after_cost.fillna(0)).cumprod()
+    df_data['nav'] = (1+df_data.return_after.fillna(0)*df_data.flag).cumprod()
     df_data['benchmark'] = df_data.close / df_data.close[0] #将CLOSE[0]的净值设定为1，计算基准净值
     
     
