@@ -3,15 +3,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import xlwt 
 from 开盘动量 import opendriven
-from 开盘动量 import opendriven_cost
+#from 开盘动量 import opendriven_cost
 from 开盘动量 import opendriven_stop
 from 开盘动量 import opendriven_stop_night
-from 开盘动量_evaluation import figure
+#from 开盘动量_evaluation import figure
 from 开盘动量_evaluation import evaluation
 
 if __name__ == '__main__':
     #获取数据
-    df = pd.read_csv('IF.csv',encoding='utf-8')
+    df = pd.read_excel('IF.xlsx')
     date = []
     for i in range(len(df['date1'])):
         date.append(df['date1'][i].strftime("%Y/%m/%d"))
@@ -33,7 +33,7 @@ if __name__ == '__main__':
 
     df_data_1,pd_transactions_1,stats_1 = opendriven(begin,interval,df_list,df_data)
     #df_data_2,pd_transactions_2,stats_2 = opendriven_stop(begin,interval,df_list,df_data)
-    df_data_3,pd_transactions_3,stats_3 = opendriven_stop_night(begin,interval,df_list,df_data)
+    #df_data_3,pd_transactions_3,stats_3 = opendriven_stop_night(begin,interval,df_list,df_data)
     #df_data_4,pd_transactions_4,stats_4 = opendriven_cost(begin,interval,df_list,df_data)
     
     #策略对比图--画对比图，放在这里直接画比较方便，没用evaluation里的函数
@@ -56,7 +56,7 @@ if __name__ == '__main__':
     ax1.set_xticks(xtick)
     
     ax1.set_xticklabels(xticklabel,rotation = 45)# assign labels on x tick positions
-    plt.savefig('return_all.jpg')
+    plt.savefig('return_opendriven.jpg')
     
     
     
