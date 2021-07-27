@@ -38,8 +38,7 @@ def evaluation(pd_buy,pd_sell,data):
     result = pd.DataFrame.from_dict(result, orient='index').T  #字典转为矩阵
 
     return result
-
-    '''
+'''
     # Evaluation per year
     data['year'] = data.date.apply(lambda x: x[:4]) #lambda x: x[:4]表示参数为x，操作为切片
     nav_per_year = data.nav.groupby(data.year).last() / data.nav.groupby(data.year).first() - 1  #通过年份分组后，最后/最初-1得到每年的收益率
@@ -49,7 +48,7 @@ def evaluation(pd_buy,pd_sell,data):
     result_per_year = pd.concat([nav_per_year,benchmark_per_year,excess_ret], axis = 1)  #数据合并
     result_per_year.columns = ['Simple return','Benchmark return','Excess return']  #赋予列名
     result_per_year = result_per_year.T  #矩阵转置
-'''
+
 
 #绘制净值曲线
 def figure(result):
@@ -67,3 +66,4 @@ def figure(result):
     plt.savefig('return_right_vol.jpg')
 
     return
+'''
