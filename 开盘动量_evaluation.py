@@ -5,7 +5,7 @@ from openpyxl import load_workbook
 import xlwt 
 
 def evaluation(pd_buy,pd_sell,data):
-    N = 250
+    N = 250*240
 
     # Annual simple return，data.shape[0]-1表示数据量，**表示幂运算
     ret_y = data.nav[data.shape[0] - 1]**(N / data.shape[0]) - 1
@@ -15,9 +15,8 @@ def evaluation(pd_buy,pd_sell,data):
     Sharpe_ratio = (data.return_after * data.flag).mean() / (data.return_after * data.flag).std() * np.sqrt(N) #np.sqrt函数计算每个元素的开方
     
     # win rate，(trans.price_sell - trans.price_buy) > 0为真返回1，假返回0
-    r_buy = len(pd_buy.price_buy)/(len(pd_buy.price_buy)+len(pd_sell.price_sell))
-    r_sell = len(pd_sell.price_sell)/(len(pd_buy.price_buy)+len(pd_sell.price_sell))
-    win_ratio = ((pd_buy.price_close_buy - pd_buy.price_buy) > 0).mean() * r_buy + (-(pd_sell.price_close_sell - pd_sell.price_sell) > 0).mean() * r_sell
+  
+    win_ratio = (((pd_buy.price_close_buy - pd_buy.price_buy) > 0).mean()  + (-(pd_sell.price_close_sell - pd_sell.price_sell) > 0).mean())/(len(pd_buy.price_buy)+len(pd_sell.price_sell))
 
     # Get drawdown and maximum drawdown
     drawdown = 1 - data.nav / data.nav.cummax()  #cummax()：给出序列前N个的最大值，由此可以计算出每个时点的回撤
