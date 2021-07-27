@@ -11,7 +11,7 @@ from 开盘动量_evaluation import evaluation
 
 if __name__ == '__main__':
     #获取数据
-    df = pd.read_excel('3.xlsx', sheet_name='Sheet1')
+    df = pd.read_csv('IF.csv',encoding='utf-8')
     date = []
     for i in range(len(df['date1'])):
         date.append(df['date1'][i].strftime("%Y/%m/%d"))
