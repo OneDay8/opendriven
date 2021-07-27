@@ -90,14 +90,18 @@ def opendriven(begin,interval,df_list,df_data):
     
     return_begin = []
     return_after = []
-    return_after_cost = []
+    #return_after_cost = []
     return_date = []
     return_open = []
     return_close = []
     for day in range(len(data)):
-        return_begin_1 = (data[day]['close'].iloc[begin-1]*(1-0.00013)-data[day]['open'].iloc[0]*1.00013)/data[day]['open'].iloc[0]*1.00013
+        begin_open_price = np.average(data[day]['open'][0:4],weights = data[day]['vol'][0:4])
+        begin_close_price = np.average(data[day]['close'][begin-4:begin],weights = data[day]['vol'][begin-4:begin])
+        return_begin_1 = (begin_close_price*(1-0.00013)-begin_open_price*1.00013)/begin_open_price*1.00013
         #加上双边交易费1.3%%
-        return_after_1 = (data[day]['close'].iloc[-1]*(1-0.00013) - data[day]['open'].iloc[begin]*1.00013) / data[day]['open'].iloc[begin]*1.00013
+        after_open_price = np.average(data[day]['open'][begin:begin+4],weights = data[day]['vol'][begin:begin+4])
+        after_close_price = np.average(data[day]['close'][-5:-1],weights = data[day]['vol'][-5:-1])
+        return_after_1 = (after_close_price*(1-0.00013) - after_open_price*1.00013) / after_open_price*1.00013
         #无交易费用
         #return_after_cost_1 = 0
         #双边交易费用：万2
@@ -174,7 +178,7 @@ def opendriven(begin,interval,df_list,df_data):
         stats.to_excel(writer, sheet_name='evaluations')
 
     return df_data,pd_transactions,stats
-
+'''
 def opendriven_cost(begin,interval,df_list,df_data):
     data = df_list.copy()
     df_data['flag'] = 0 # 持仓标记，持多仓：1，不持仓：0，持空仓：-1
@@ -271,12 +275,12 @@ def opendriven_cost(begin,interval,df_list,df_data):
         stats.to_excel(writer, sheet_name='evaluations')
 
     return df_data,pd_transactions,stats
+'''
 
 
 
 
-
-
+#加上反向信号&吊灯止损
 def opendriven_stop(begin,interval,df_list,df_data):
     data = df_list.copy()
     df_data['flag'] = 0 # 持仓标记，持多仓：1，不持仓：0，持空仓：-1
@@ -286,21 +290,21 @@ def opendriven_stop(begin,interval,df_list,df_data):
     return_begin = []
     return_after = []
     return_after_all = []
-    return_after_cost = []
+    #return_after_cost = []
     num_n = []
     return_date = []
     return_open = []
     return_close = []
     for day in range(len(data)):
-        return_begin_1 = (data[day]['close'].iloc[begin-1]-data[day]['open'].iloc[0])/data[day]['open'].iloc[0]
-        return_after_1 = (data[day]['close'].iloc[len(data[day]['close'])-1] - data[day]['open'].iloc[begin]) / (data[day]['open'].iloc[begin])
+        return_begin_1 = (data[day]['close'].iloc[begin-1]*(1-0.00013)-data[day]['open'].iloc[0])*1.00013/data[day]['open'].iloc[0]*1.00013
+        return_after_1 = (data[day]['close'].iloc[len(data[day]['close'])-1]*(1-0.00013) - data[day]['open'].iloc[begin])*1.00013 / (data[day]['open'].iloc[begin])*1.00013
         #无交易费用
-        return_after_cost_1 = 0
+        #return_after_cost_1 = 0
         #双边交易费用：万2
         #return_after_cost_1 = (data[day]['close'].iloc[len(data[day]['close'])-1]*0.0002 + data[day]['open'].iloc[begin]*0.0002) / (data[day]['open'].iloc[begin])
         return_begin.append(return_begin_1)
         return_after.append(return_after_1)
-        return_after_cost.append(return_after_cost_1)
+        #return_after_cost.append(return_after_cost_1)
         return_date.append(data[day]['date'].iloc[0])
         return_open.append(data[day]['open'].iloc[0])
         return_close.append(data[day]['close'].iloc[-1])
@@ -317,46 +321,49 @@ def opendriven_stop(begin,interval,df_list,df_data):
             
             df_data.loc[day,'flag'] = 1
             date_in = data[day]['date'].iloc[0]  #记录买入日期
-            '''
-            # 出错
-            price = data[day]['close'][interval*3:interval*3+5]
-            weights = data[day]['vol'][interval*3:interval*3+5]
-            vwap = np.average(price,weights = weights) 
-            price_in = vwap   #记录买入价格
-            '''
-            price_in = data[day]['open'].iloc[interval*3]
-            price_close_buy = data[day]['close'].iloc[len(data[day]['close'])-1]  #记录平仓价格
+            
+            price_in = np.average(data[day]['close'][interval*3:interval*3+5],weights = data[day]['vol'][interval*3:interval*3+5])
+            price_close_buy = data[day]['close'].iloc[len(data[day]['close'])-1]*1.00013  #记录平仓价格
             record_buy.append([date_in, price_in,price_close_buy])  #将日期和价格以列表形式添加到买入记录
             
-            price_stop = [data[day]['open'].iloc[begin]]
+            price_stop = [np.average(data['close'][begin-4:begin], weights=data['volume'][begin-4:begin)*(1-0.00013)]
             return_after_section = []
+            
             n = 0
             for i in range(int(len(data[day]['high'])/interval-5)):
-
-                #反向止损
-                if max(data[day]['high'][interval*i:interval*(i+1)]) >= max(data[day]['high'][interval*(i+1):interval*(i+2)]) \
-                    and max(data[day]['high'][interval*(i+1):interval*(i+2)]) >= max(data[day]['high'][interval*(i+2):interval*(i+3)]) \
-                        and max(data[day]['high'][interval*(i+2):interval*(i+3)]) >= max(data[day]['high'][interval*(i+3):interval*(i+4)]) \
-                            and max(data[day]['high'][interval*(i+3):interval*(i+4)]) >= max(data[day]['high'][interval*(i+4):interval*(i+5)]):
-                                
-                                price_stop.append(data[day]['open'].iloc[interval*(i+5)])
-                                return_after_section.append((price_stop[-1] - price_stop[-2])*((3-n)/3)/price_stop[-2])
-                                n = n+1
-                if n == 3:
-                    break
-                #衰弱止损
+                #衰弱止损指标计算
                 high_low = max(data[day]['high'][0:interval*(i+5)]) - min(data[day]['low'][0:interval*(i+5)])
                 preclose_high = np.abs(data[day-1]['close'].iloc[-1] - max(data[day]['high'][0:interval*(i+5)]))
                 preclose_low = np.abs(data[day-1]['close'].iloc[-1] - min(data[day]['low'][0:interval*(i+5)]))
                 TR = max(high_low,preclose_high,preclose_low)
                 maxhigh = max(data[day]['high'][0:interval*(i+5)])
-                if (maxhigh - data[day]['low'].iloc[interval*(i+5)-1]) >= TR*2.5:
-                    price_stop.append(data[day]['open'].iloc[interval*(i+5)])
-                    return_after_section.append((price_stop[-1] - price_stop[-2])*((3-n)/3)/price_stop[-2])
-                    n = n+1
-                if n == 3:
-                    break
-            return_after_section.append((data[day]['close'].iloc[-1] - price_stop[-1])*((3-n)/3)/price_stop[-1])
+                ATR=TR/np.abs(interval*(i+5))
+
+
+                #反向止损
+                if max(data[day]['high'][interval*i:interval*(i+1)]) >= max(data[day]['high'][interval*(i+1):interval*(i+2)]) \
+                >= max(data[day]['high'][interval*(i+2):interval*(i+3)]) >= max(data[day]['high'][interval*(i+3):interval*(i+4)]) \
+                >= max(data[day]['high'][interval*(i+4):interval*(i+5)]):
+                                
+                                price_stop_1 = np.average(data['close'][interval*(i+5):interval*(i+5)+5], weights=data['volume'][interval*(i+5):interval*(i+5)+5])*(1-0.00013)
+                                price_stop.append(price_stop_1)
+                                return_after_section.append((price_stop[-1] - price_stop[-2])*((3-n)/3)/price_stop[-2])
+                                n = n+1
+                                if (maxhigh - data[day]['low'].iloc[interval*(i+5)-1]) >= ATR*2.5:
+                                    
+                                    price_stop_2 = np.average(data['close'][interval*(i+5):interval*(i+5)+5], weights=data['volume'][interval*(i+5):interval*(i+5)+5])*(1-0.00013)
+                                    price_stop.append(price_stop_2)
+                                  
+                                    return_after_section.append((price_stop[-1] - price_stop[-2])*((3-n)/3)/price_stop[-2])
+                                    n = n+1
+                                    if n == 3:
+                                        break
+                    
+                
+                
+                
+            price_stop_0=np.average(data['close'][-5:-1], weights=data['volume'][-5:-1])*(1-0.00013) 
+            return_after_section.append((price_stop_0 - price_stop[-1])*((3-n)/3)/price_stop[-1])
             return_after_all_1 = sum(return_after_section)
             return_after_all.append(return_after_all_1)
             num_n.append(n)
@@ -433,7 +440,7 @@ def opendriven_stop(begin,interval,df_list,df_data):
 
 
     #data['simple_return'] = data.close.pct_change(1).fillna(0)
-    df_data['nav'] = (1+df_data.return_after_all.fillna(0)*df_data.flag-df_data.return_after_cost.fillna(0)).cumprod()
+    df_data['nav'] = (1+df_data.return_after_all.fillna(0)*df_data.flag).cumprod()
     df_data['benchmark'] = df_data.close / df_data.close[0] #将CLOSE[0]的净值设定为1，计算基准净值
     
     
@@ -447,7 +454,7 @@ def opendriven_stop(begin,interval,df_list,df_data):
     return df_data,pd_transactions,stats
 
 
-
+#加上止损和隔夜
 def opendriven_stop_night(begin,interval,df_list,df_data):
     data = df_list.copy()
     df_data = df_data.iloc[0:-1]
