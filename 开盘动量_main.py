@@ -36,7 +36,7 @@ if __name__ == '__main__':
     df_data_3,pd_transactions_3,stats_3 = opendriven_stop_night(begin,interval,df_list,df_data)
     #df_data_4,pd_transactions_4,stats_4 = opendriven_cost(begin,interval,df_list,df_data)
     
-    #策略对比图
+    #策略对比图--画对比图，放在这里直接画比较方便，没用evaluation里的函数
     xtick = np.round(np.linspace(0, df_data_1.shape[0] - 1, 10), 0)
     xticklabel = df_data_1.date[xtick]
     plt.figure(figsize=(15,6.5))
