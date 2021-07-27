@@ -12,7 +12,7 @@ def evaluation(trans,data):
     #Sharpe_ratio = (((data.simple_return * data.position).mean())-0.000082)/ \
                    #(data.simple_return * data.position).std() * np.sqrt(250)
     
-    Sharpe_ratio = (((data.simple_return * data.position)).mean())/ \
+    Sharpe_ratio = (data.simple_return * data.position).mean()/ \
                    (data.simple_return * data.position).std() * np.sqrt(60000)
 
     # Get drawdown and maximum drawdown
@@ -58,7 +58,7 @@ def evaluation_stoploss(trans,data):
     #Sharpe_ratio = (((data.simple_return * data.position).mean())-0.00004926)/ \
                    #(data.simple_return * data.position).std() * np.sqrt(60000)
     
-    Sharpe_ratio = (((data.simple_return * data.position).mean())-0.00000006)/ \
+    Sharpe_ratio = (data.simple_return * data.position).mean()/ \
                    (data.simple_return * data.position).std() * np.sqrt(60000)
 
     # Get drawdown and maximum drawdown
