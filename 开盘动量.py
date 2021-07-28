@@ -280,17 +280,18 @@ def opendriven_cost(begin,interval,df_list,df_data):
 
 #加上反向信号&吊灯止损
 def opendriven_stop(begin,interval,df_list,df_data):
-   data = df_list.copy()
+    data = df_list.copy()
     df_data['flag'] = 0 # 持仓标记，持多仓：1，不持仓：0，持空仓：-1
     record_buy = []
     record_sell = []
     
     return_begin = []
     return_after = []
-    #return_after_cost = []
+    return_after_all = []
     return_date = []
     return_open = []
     return_close = []
+    num_n = []
     for day in range(len(data)):
         begin_open_price = np.average(data[day]['open'][0:5],weights = data[day]['vol'][0:5])
         begin_close_price = np.average(data[day]['close'][begin-5:begin],weights = data[day]['vol'][begin-5:begin])
@@ -320,7 +321,7 @@ def opendriven_stop(begin,interval,df_list,df_data):
             df_data.loc[day,'flag'] = 1
             date_in = data[day]['date'].iloc[0]  #记录买入日期
             
-            # 出错
+           
             #记录买入价格
             price_in = np.average(data[day]['close'][interval*3:interval*3+4],weights = data[day]['vol'][interval*3:interval*3+4])*1.00013
            
@@ -329,10 +330,11 @@ def opendriven_stop(begin,interval,df_list,df_data):
             record_buy.append([date_in, price_in,price_close_buy])  #将日期和价格以列表形式添加到买入记录
            
             
-            price_stop = [np.average(data['close'][begin-5:begin], weights=data['volume'][begin-5:begin)*(1-0.00013)]
+            price_stop = [np.average(data[day]['close'][begin-5:begin], weights=data[day]['vol'][begin-5:begin])*(1-0.00013)]
             return_after_section = []
             
             n = 0
+            
             for i in range(int(len(data[day]['high'])/interval-5)):
                 #衰弱止损指标计算
                 high_low = max(data[day]['high'][0:interval*(i+5)]) - min(data[day]['low'][0:interval*(i+5)])
@@ -348,25 +350,26 @@ def opendriven_stop(begin,interval,df_list,df_data):
                 >= max(data[day]['high'][interval*(i+2):interval*(i+3)]) >= max(data[day]['high'][interval*(i+3):interval*(i+4)]) \
                 >= max(data[day]['high'][interval*(i+4):interval*(i+5)]):
                                 
-                                price_stop_1 = np.average(data['close'][interval*(i+5):interval*(i+5)+5], weights=data['volume'][interval*(i+5):interval*(i+5)+5])*(1-0.00013)
+                                price_stop_1 = np.average(data[day]['close'][interval*(i+5):interval*(i+5)+4], weights=data[day]['vol'][interval*(i+5):interval*(i+5)+4])*(1-0.00013)
                                 price_stop.append(price_stop_1)
+                                
                                 return_after_section.append((price_stop[-1] - price_stop[-2])*((3-n)/3)/price_stop[-2])
                                 n = n+1
-                                if (maxhigh - data[day]['low'].iloc[interval*(i+5)-1]) >= ATR*2.5:
-                                    
-                                    price_stop_2 = np.average(data['close'][interval*(i+5):interval*(i+5)+5], weights=data['volume'][interval*(i+5):interval*(i+5)+5])*(1-0.00013)
+                                if (maxhigh - data[day]['low'].iloc[interval*(i+5)-1]) > ATR*2.5:
+                                    price_stop_2 = np.average(data[day]['close'][interval*(i+5):interval*(i+5)+4], weights=data[day]['vol'][interval*(i+5):interval*(i+5)+4])*(1-0.00013)
                                     price_stop.append(price_stop_2)
-                                  
+                                    
                                     return_after_section.append((price_stop[-1] - price_stop[-2])*((3-n)/3)/price_stop[-2])
                                     n = n+1
-                                    if n == 3:
+                                    
+                                    if n >= 3:
+                                        n=3
                                         break
-                    
-                
-                
-                
-            price_stop_0=np.average(data['close'][-5:-1], weights=data['volume'][-5:-1])*(1-0.00013) 
+                                
+            
+            price_stop_0 = np.average(data[day]['close'][-5::], weights=data[day]['vol'][-5::])*(1-0.00013)
             return_after_section.append((price_stop_0 - price_stop[-1])*((3-n)/3)/price_stop[-1])
+            
             return_after_all_1 = sum(return_after_section)
             return_after_all.append(return_after_all_1)
             num_n.append(n)
@@ -384,32 +387,37 @@ def opendriven_stop(begin,interval,df_list,df_data):
             record_sell.append([date_out, price_out,price_close_sell])  #将日期和价格以列表形式添加到买入记录
             n = 0
             
-            price_stop = [data[day]['open'].iloc[begin]]
+            price_stop = [np.average(data[day]['close'][begin-5:begin], weights=data[day]['vol'][begin-5:begin])*(1-0.00013)]
             return_after_section = []
             for i in range(int(len(data[day]['high'])/interval-3)):
-
-                #反向止损
-                if min(data[day]['low'][interval*i:interval*(i+1)]) <= min(data[day]['low'][interval*(i+1):interval*(i+2)]) \
-                    and min(data[day]['low'][interval*(i+1):interval*(i+2)]) <= min(data[day]['low'][interval*(i+2):interval*(i+3)]):
-                        price_stop.append(data[day]['open'].iloc[interval*(i+3)])
-                        return_after_section.append((price_stop[-1]-price_stop[-2])*((3-n)/3)/price_stop[-2])
-                        n = n+1
-        
-                if n == 3:
-                    break
-                #衰弱止损
                 high_low = max(data[day]['high'][0:interval*(i+3)]) - min(data[day]['low'][0:interval*(i+3)])
                 preclose_high = np.abs(data[day-1]['close'].iloc[-1] - max(data[day]['high'][0:interval*(i+3)]))
                 preclose_low = np.abs(data[day-1]['close'].iloc[-1] - min(data[day]['low'][0:interval*(i+3)]))
                 TR = max(high_low,preclose_high,preclose_low)
                 minlow = min(data[day]['low'][0:interval*(i+3)])
-                if (data[day]['high'].iloc[interval*(i+3)-1] - minlow) >= TR*2:
-                    price_stop.append(data[day]['open'].iloc[interval*(i+3)])
-                    return_after_section.append((price_stop[-1] - price_stop[-2])*((3-n)/3)/price_stop[-2])
-                    n = n+1
-                if n == 3:
-                    break
-            return_after_section.append((data[day]['close'].iloc[-1] - price_stop[-1])*((3-n)/3)/price_stop[-1])
+                ATR=TR/np.abs(interval*(i+3))
+
+                #反向止损
+                if min(data[day]['low'][interval*i:interval*(i+1)]) <= min(data[day]['low'][interval*(i+1):interval*(i+2)]) \
+                    and min(data[day]['low'][interval*(i+1):interval*(i+2)]) <= min(data[day]['low'][interval*(i+2):interval*(i+3)]):
+                        price_stop_1 = np.average(data[day]['close'][interval*(i+3):interval*(i+3)+4], weights=data[day]['vol'][interval*(i+3):interval*(i+3)+4])*(1-0.00013)
+
+                        price_stop.append(price_stop_1)
+                        
+                        return_after_section.append((price_stop[-1]-price_stop[-2])*((3-n)/3)/price_stop[-2])
+                        n = n+1
+                        if (data[day]['high'].iloc[interval*(i+3)-1] - minlow) > ATR*2:
+                            price_stop_2 = np.average(data[day]['close'][interval*(i+3):interval*(i+3)+4], weights=data[day]['vol'][interval*(i+3):interval*(i+3)+4])*(1-0.00013)
+                            price_stop.append(price_stop_2)
+                            
+                            return_after_section.append((price_stop[-1] - price_stop[-2])*((3-n)/3)/price_stop[-2])
+                            n = n+1
+                            
+                            if n >= 3:
+                                n=3
+                                break
+            price_stop_0 = np.average(data[day]['close'][-5::], weights=data[day]['vol'][-5::])*(1-0.00013)
+            return_after_section.append((price_stop_0 - price_stop[-1])*((3-n)/3)/price_stop[-1])
             return_after_all_1 = sum(return_after_section)
             return_after_all.append(return_after_all_1)
             num_n.append(n)
@@ -426,7 +434,7 @@ def opendriven_stop(begin,interval,df_list,df_data):
     df_data['return_after'] = return_after
     df_data['return_after_all'] = return_after_all
     df_data['num_n'] = num_n
-    df_data['return_after_cost'] = return_after_cost
+    #df_data['return_after_cost'] = return_after_cost
     df_data['open'] = return_open
     df_data['close'] = return_close
 
