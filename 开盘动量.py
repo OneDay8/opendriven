@@ -460,10 +460,8 @@ def opendriven_stop(begin,interval,df_list,df_data):
     return df_data,pd_transactions,stats
 
 
-#加上止损和隔夜
-def opendriven_stop_night(begin,interval,df_list,df_data):
+def opendriven_stop(begin,interval,df_list,df_data):
     data = df_list.copy()
-    df_data = df_data.iloc[0:-1]
     df_data['flag'] = 0 # 持仓标记，持多仓：1，不持仓：0，持空仓：-1
     record_buy = []
     record_sell = []
@@ -476,7 +474,7 @@ def opendriven_stop_night(begin,interval,df_list,df_data):
     return_date = []
     return_open = []
     return_close = []
-    for day in range(len(data)-1):
+    for day in range(len(data)):
         return_begin_1 = (data[day]['close'].iloc[begin-1]-data[day]['open'].iloc[0])/data[day]['open'].iloc[0]
         return_after_1 = (data[day]['close'].iloc[len(data[day]['close'])-1] - data[day]['open'].iloc[begin]) / (data[day]['open'].iloc[begin])
         #无交易费用
@@ -496,6 +494,8 @@ def opendriven_stop_night(begin,interval,df_list,df_data):
         if min(data[day]['low'][0:interval]) <= min(data[day]['low'][interval:interval*2]) and min(data[day]['low'][interval:interval*2]) <= min(data[day]['low'][interval*2:interval*3]) \
             and data[day]['close'].iloc[interval-1] <= data[day]['close'].iloc[interval*2-1] and data[day]['close'].iloc[interval*2-1] <= data[day]['close'].iloc[interval*3-1] \
                 and data[day]['open'].iloc[0] <= data[day]['open'].iloc[interval] and data[day]['open'].iloc[interval] <= data[day]['open'].iloc[interval*2]:
+                    
+            
             
             
             df_data.loc[day,'flag'] = 1
@@ -539,7 +539,7 @@ def opendriven_stop_night(begin,interval,df_list,df_data):
                     n = n+1
                 if n == 3:
                     break
-            return_after_section.append((data[day+1]['open'].iloc[0] - price_stop[-1])*((3-n)/3)/price_stop[-1])
+            return_after_section.append((data[day]['close'].iloc[-1] - price_stop[-1])*((3-n)/3)/price_stop[-1])
             return_after_all_1 = sum(return_after_section)
             return_after_all.append(return_after_all_1)
             num_n.append(n)
@@ -547,6 +547,8 @@ def opendriven_stop_night(begin,interval,df_list,df_data):
         elif data[day]['close'].iloc[interval-1] >= data[day]['close'].iloc[interval*2-1] and data[day]['close'].iloc[interval*2-1] >= data[day]['close'].iloc[interval*3-1] \
             and max(data[day]['high'][0:interval]) >= max(data[day]['high'][interval:interval*2]) and max(data[day]['high'][interval:interval*2]) >= max(data[day]['high'][interval*2:interval*3]) \
                 and data[day]['open'].iloc[0] >= data[day]['open'].iloc[interval] and data[day]['open'].iloc[interval] >= data[day]['open'].iloc[interval*2]:
+            
+            
             
             
             
@@ -558,10 +560,10 @@ def opendriven_stop_night(begin,interval,df_list,df_data):
             price_out = vwap   #记录卖出价格
             price_close_sell = data[day]['close'].iloc[len(data[day]['close'])-1]  #记录平仓价格
             record_sell.append([date_out, price_out,price_close_sell])  #将日期和价格以列表形式添加到买入记录
+            n = 0
             
             price_stop = [data[day]['open'].iloc[begin]]
             return_after_section = []
-            n = 0
             for i in range(int(len(data[day]['high'])/interval-3)):
 
                 #反向止损
@@ -620,7 +622,7 @@ def opendriven_stop_night(begin,interval,df_list,df_data):
     
     stats = evaluation(pd_buy,pd_sell, df_data) #计算评价指标
     # Output into Excel
-    with pd.ExcelWriter("开盘动量_stop_night.xlsx") as writer:
+    with pd.ExcelWriter("开盘动量_stop.xlsx") as writer:
         df_data.to_excel(writer, sheet_name='stock_data')
         pd_transactions.to_excel(writer, sheet_name='trade_record')
         stats.to_excel(writer, sheet_name='evaluations')
