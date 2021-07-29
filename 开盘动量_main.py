@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import xlwt 
 from 开盘动量 import opendriven
-#from 开盘动量 import opendriven_cost
+
 from 开盘动量 import opendriven_stop
 from 开盘动量 import opendriven_stop_night
 #from 开盘动量_evaluation import figure
@@ -59,9 +59,7 @@ if __name__ == '__main__':
     plt.savefig('return_opendriven.jpg')
     
     
-    
-    #年化收益
-    #result1 = evaluation(trans5,res5)
+ 
     
     
     
