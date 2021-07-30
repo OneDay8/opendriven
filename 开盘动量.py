@@ -548,4 +548,3 @@ def opendriven_stop_night(begin,interval,df_list,df_data):
 
 
 
-
