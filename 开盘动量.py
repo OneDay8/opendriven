@@ -498,7 +498,7 @@ def opendriven_stop_night(begin,interval,df_list,df_data):
                             
                 if n == 3:
                     break
-            price_stop_0 = np.average(data[day]['close'][0:5], weights=data[day+1]['vol'][0:5])*(1-0.00013)
+            price_stop_0 = np.average(data[day]['close'][0:5], weights=data[day]['vol'][0:5])*(1-0.00013)
             return_after_section.append((price_stop_0 - price_stop[-1])*((3-n)/3)/price_stop[-1])
             return_after_all_1 = sum(return_after_section)
             return_after_all.append(return_after_all_1)
